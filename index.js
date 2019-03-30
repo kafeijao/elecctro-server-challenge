@@ -5,23 +5,28 @@ const Hapi = require('hapi');
 
 // Project Files
 const config = require('./config.json');
-const routes = require('./routes');
 
 
-
-const server = Hapi.server({
+// Hapi server settings
+const hapiOptions = {
     port: config.server.port,
     host: config.server.host
-});
+};
+
+if (config.server.debugMode) {
+    hapiOptions.debug = { request: ['error'] };
+}
+const server = Hapi.server(hapiOptions);
 
 
 // Routes
-server.route(routes.GETTodo);
+const routes = require('./routes')(server);
+server.route(routes.getTodo);
 
 const init = async () => {
 
     await server.start();
-    console.log(`Server running at: ${server.info.uri}`);
+    console.log(`Server running at: ${server.info.uri}/todos`);
 };
 
 process.on('unhandledRejection', (err) => {
