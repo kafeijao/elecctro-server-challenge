@@ -1,0 +1,17 @@
+{
+    "todoState": {
+        "COMPLETE": "COMPLETE",
+        "INCOMPLETE": "INCOMPLETE"
+    },
+
+    "todoStateFilter": {
+        "ALL": "ALL",
+        "COMPLETE": "COMPLETE",
+        "INCOMPLETE": "INCOMPLETE"
+    },
+
+    "orderByFilter": {
+        "DATE_ADDED": "DATE_ADDED",
+        "DESCRIPTION": "DESCRIPTION"
+    }
+}
