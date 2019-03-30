@@ -22,6 +22,9 @@ const server = Hapi.server(hapiOptions);
 // Routes
 const routes = require('./routes')(server);
 server.route(routes.getTodo);
+server.route(routes.putTodo);
+server.route(routes.patchTodo);
+server.route(routes.deleteTodo);
 
 const init = async () => {
 

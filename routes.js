@@ -4,16 +4,24 @@
 const Joi = require('joi');
 const data = require('./data.json');
 
+
 // Joi schemas
-const todoSchema = {
-    id: Joi.string(),
-    state: Joi.string().valid([data.todoState.COMPLETE, data.todoState.INCOMPLETE]),
-    description: Joi.string(),
-    dateAdded: Joi.date().iso(),
+const inputSchema = {
     stateFilter: Joi.string().valid([data.todoStateFilter.ALL, data.todoStateFilter.COMPLETE, data.todoStateFilter.INCOMPLETE]).default(data.todoStateFilter.ALL),
-    orderBy: Joi.string().valid([data.orderByFilter.DATE_ADDED, data.orderByFilter.DESCRIPTION]).default(data.orderByFilter.DATE_ADDED)
+    orderBy: Joi.string().valid([data.orderByFilter.DATE_ADDED, data.orderByFilter.DESCRIPTION]).default(data.orderByFilter.DATE_ADDED),
 };
 
+const todoStateSchema = Joi.string().valid([data.todoState.COMPLETE, data.todoState.INCOMPLETE]);
+
+const todoSchema = Joi.object({
+    id: Joi.string(),
+    state: todoStateSchema,
+    description: Joi.string(),
+    dateAdded: Joi.date().iso()
+});
+
+
+// Util functions
 /**
  * Compares two properties and returns -1, 0, 1 according if that property order.
  * @param a
@@ -58,23 +66,113 @@ module.exports = function (server) {
             }
             todoList.sort((a, b) => compareNomNumberProperty(a, b, propertyToOrderBy));
 
-            return JSON.stringify(todoList);
+            return todoList;
         },
         options: {
             validate: {
                 query: {
-                    filter: todoSchema.stateFilter,
-                    orderBy: todoSchema.orderBy,
+                    filter: inputSchema.stateFilter,
+                    orderBy: inputSchema.orderBy,
                 }
+
+            }, response: {
+                schema: Joi.array().items(todoSchema)
             }
         }
     };
 
-    module.putTodo = {};
+    module.putTodo = {
+        method: 'PUT',
+        path: '/todos',
+        handler: async (request, h) => {
 
-    module.patchTodo = {};
+            const description = request.payload.description;
 
-    module.deleteTodo = {};
+            const newEntry = {
+                state: data.todoState.INCOMPLETE,
+                description: description,
+                dateAdded: new Date()
+            };
+
+            return await database.insertEntry(newEntry);
+        },
+        options: {
+            validate: {
+                payload: {
+                    description: Joi.string().required()
+                }
+
+            }, response: {
+                schema: todoSchema
+            }
+        }
+    };
+
+    module.patchTodo = {
+        method: 'PATCH',
+        path: '/todo/{id}',
+        handler: async (request, h) => {
+
+            const id = encodeURIComponent(request.params.id);
+
+            const state = request.payload.state;
+            const description = request.payload.description;
+
+            const entry = await database.getEntry(id);
+
+            let data = void 0;
+            let code = 500;
+
+            if (entry) {
+                if (entry.state === require('./data.json').todoState.INCOMPLETE) {
+
+                    if (state) {
+                        entry.state = state;
+                    }
+
+                    if (description) {
+                        entry.description = description;
+                    }
+
+                    data = await database.updateEntry(entry);
+                    code = 200;
+
+                } else {
+                    code = 400;
+                }
+
+            } else {
+                code = 404;
+            }
+
+            return h.response(data).code(code);
+
+        },
+        options: {
+            validate: {
+                payload:
+                    Joi.object().keys({
+                        state: todoStateSchema,
+                        description: Joi.string()
+                    }).or('state', 'description')
+
+            }, response: {
+                schema: todoSchema
+            }
+        }
+    };
+
+    module.deleteTodo = {
+        method: 'DELETE',
+        path: '/todo',
+        handler: async (request, h) => {
+
+
+
+
+            return void 0;
+        }
+    };
 
     return module;
 };
