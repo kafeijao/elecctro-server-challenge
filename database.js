@@ -16,9 +16,11 @@ module.exports = function (server, segment) {
 
         const entries = [];
 
-        for (const indexEntry of index) {
-            const entry = await fakeDatabase.get(indexEntry);
-            entries.push(entry);
+        if (index) {
+            for (const indexEntry of index) {
+                const entry = await fakeDatabase.get(indexEntry);
+                entries.push(entry);
+            }
         }
 
         return entries;
