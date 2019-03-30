@@ -64,7 +64,7 @@ module.exports = function (server, segment) {
      * Deletes an entry from the database.
      * @param id
      */
-    module.deleteTodo = async function (id) {
+    module.deleteEntry = async function (id) {
         const oldIndex = await fakeDatabase.get(indexKey);
 
         // Replace using filter with indexOf to improve performance (less readable)

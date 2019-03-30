@@ -154,7 +154,13 @@ module.exports = function (server) {
                     Joi.object().keys({
                         state: todoStateSchema,
                         description: Joi.string()
-                    }).or('state', 'description')
+                    }).or('state', 'description'),
+
+                params: {
+                    id: Joi.string().guid({
+                        version: ['uuidv4']
+                    })
+                }
 
             }, response: {
                 schema: todoSchema
@@ -164,13 +170,36 @@ module.exports = function (server) {
 
     module.deleteTodo = {
         method: 'DELETE',
-        path: '/todo',
+        path: '/todo/{id}',
         handler: async (request, h) => {
 
+            const id = encodeURIComponent(request.params.id);
 
+            const entry = await database.getEntry(id);
 
+            let data = void 0;
+            let code = 500;
 
-            return void 0;
+            if (entry) {
+                await database.deleteEntry(id);
+                code = 200;
+
+            } else {
+                code = 404;
+            }
+
+            return h.response(data).code(code);
+
+        },
+        options: {
+            validate: {
+                params: {
+                    id: Joi.string().guid({
+                        version: ['uuidv4']
+                    })
+                }
+
+            }
         }
     };
 
