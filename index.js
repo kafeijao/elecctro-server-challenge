@@ -18,7 +18,6 @@ if (config.server.debugMode) {
 }
 const server = Hapi.server(hapiOptions);
 
-
 // Routes
 const routes = require('./routes')(server);
 server.route(routes.getTodo);
@@ -27,9 +26,13 @@ server.route(routes.patchTodo);
 server.route(routes.deleteTodo);
 
 const init = async () => {
+    // Initialize lout
+    await server.register([require('vision'), require('inert'), require('lout')]);
+    console.log(`Documentation running at: ${server.info.uri}/docs`);
 
+    // Initialize server
     await server.start();
-    console.log(`Server running at: ${server.info.uri}/todos`);
+    console.log(`Server running at: ${server.info.uri}`);
 };
 
 process.on('unhandledRejection', (err) => {
