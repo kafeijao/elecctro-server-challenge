@@ -3,5 +3,10 @@
        "port": 8081,
        "host": "localhost",
        "debugMode": true
-   }
+   },
+    "auth": {
+        "isSecure": false,
+        "encryptionKey": "Hs`9F?\\kc8%-=NAcr5DwrQNW8qt&M29`",
+        "saltRounds": 10
+    }
 }

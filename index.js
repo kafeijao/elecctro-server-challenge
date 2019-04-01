@@ -26,9 +26,15 @@ server.route(routes.patchTodo);
 server.route(routes.deleteTodo);
 
 const init = async () => {
-    // Initialize lout
+    // Register lout
     await server.register([require('vision'), require('inert'), require('lout')]);
     console.log(`Documentation running at: ${server.info.uri}/docs`);
+
+    // Register auth plugin
+    await server.register(require('hapi-auth-cookie'));
+
+    // Configure authentication
+    require('./auth')(server);
 
     // Initialize server
     await server.start();

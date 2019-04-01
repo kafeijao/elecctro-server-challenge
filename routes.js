@@ -52,7 +52,9 @@ module.exports = function (server) {
             const filter = request.query.filter;
             const orderBy = request.query.orderBy;
 
-            let todoList = await database.getAllEntries();
+            const userID = request.auth.credentials.name;
+
+            let todoList = await database.getAllEntries(userID);
 
             // Filter the list
             if (filter !== data.todoStateFilter.ALL) {
@@ -87,6 +89,7 @@ module.exports = function (server) {
         handler: async (request, h) => {
 
             const description = request.payload.description;
+            const userID = request.auth.credentials.name;
 
             const newEntry = {
                 state: data.todoState.INCOMPLETE,
@@ -94,7 +97,7 @@ module.exports = function (server) {
                 dateAdded: new Date()
             };
 
-            return await database.insertEntry(newEntry);
+            return await database.insertEntry(newEntry, userID);
         },
         options: {
             validate: {
@@ -117,8 +120,9 @@ module.exports = function (server) {
 
             const state = request.payload.state;
             const description = request.payload.description;
+            const userID = request.auth.credentials.name;
 
-            const entry = await database.getEntry(id);
+            const entry = await database.getEntry(id, userID);
 
             let data = void 0;
             let code = 500;
@@ -134,7 +138,7 @@ module.exports = function (server) {
                         entry.description = description;
                     }
 
-                    data = await database.updateEntry(entry);
+                    data = await database.updateEntry(entry, userID);
                     code = 200;
 
                 } else {
@@ -174,14 +178,15 @@ module.exports = function (server) {
         handler: async (request, h) => {
 
             const id = encodeURIComponent(request.params.id);
+            const userID = request.auth.credentials.name;
 
-            const entry = await database.getEntry(id);
+            const entry = await database.getEntry(id, userID);
 
             let data = void 0;
             let code = 500;
 
             if (entry) {
-                await database.deleteEntry(id);
+                await database.deleteEntry(id, userID);
                 code = 200;
 
             } else {

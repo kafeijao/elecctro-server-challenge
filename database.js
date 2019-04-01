@@ -2,17 +2,16 @@
 
 const uuid = require('uuid/v4');
 
-const indexKey = 'index';
-
 module.exports = function (server, segment) {
 
     const fakeDatabase = server.cache({ segment: segment, expiresIn: 364 * 24 * 60 * 60 * 1000 });
 
     /**
      * Get all entries in the database.
+     * @param userID
      */
-    module.getAllEntries = async function () {
-        const index = await fakeDatabase.get(indexKey);
+    module.getAllEntries = async function (userID) {
+        const index = await fakeDatabase.get(userID);
 
         const entries = [];
 
@@ -29,24 +28,37 @@ module.exports = function (server, segment) {
     /**
      * Get a certain entry from the database.
      * @param id
+     * @param userID
      */
-    module.getEntry = async function (id) {
-        return await fakeDatabase.get(id);
+    module.getEntry = async function (id, userID) {
+        const index = await fakeDatabase.get(userID);
+
+        if (index) {
+            for (const indexEntry of index) {
+                const entry = await fakeDatabase.get(indexEntry);
+                if (entry.id === id) {
+                    return entry;
+                }
+            }
+        }
+
+        return void 0;
     };
 
     /**
-     * Inserts an entry in the database.
+     * Inserts an entry in the database associated with a specific userID.
      * @param entry
+     * @param userID
      */
-    module.insertEntry = async function (entry) {
+    module.insertEntry = async function (entry, userID) {
         entry.id = uuid();
 
         await fakeDatabase.set(entry.id, entry);
 
-        // Add the new id to the index
-        const index = await fakeDatabase.get(indexKey) || [];
+        // Add the new id to the userID index
+        const index = await fakeDatabase.get(userID) || [];
         index.push(entry.id);
-        await fakeDatabase.set(indexKey, index);
+        await fakeDatabase.set(userID, index);
 
         return entry;
     };
@@ -54,24 +66,37 @@ module.exports = function (server, segment) {
     /**
      * Updates an entry in the database.
      * @param updatedEntry
+     * @param userID
      */
-    module.updateEntry = async function (updatedEntry) {
-        await fakeDatabase.set(updatedEntry.id, updatedEntry);
-        return updatedEntry;
+    module.updateEntry = async function (updatedEntry, userID) {
+        const oldEntry = await module.getEntry(updatedEntry.id, userID);
+
+        if (oldEntry) {
+            await fakeDatabase.set(updatedEntry.id, updatedEntry);
+            return updatedEntry;
+
+        } else {
+            return void 0;
+        }
     };
 
     /**
      * Deletes an entry from the database.
      * @param id
+     * @param userID
      */
-    module.deleteEntry = async function (id) {
-        const oldIndex = await fakeDatabase.get(indexKey);
+    module.deleteEntry = async function (id, userID) {
+        const entry = await module.getEntry(id, userID);
 
-        // Replace using filter with indexOf to improve performance (less readable)
-        const newIndex = oldIndex.filter(entry => entry !== id);
-        await fakeDatabase.set(indexKey, newIndex);
+        if (entry) {
+            const oldIndex = await fakeDatabase.get(userID);
 
-        await fakeDatabase.drop(id);
+            // Replace using filter with indexOf to improve performance (less readable)
+            const newIndex = oldIndex.filter(entry => entry !== id);
+            await fakeDatabase.set(userID, newIndex);
+
+            await fakeDatabase.drop(id);
+        }
     };
 
     return module;
